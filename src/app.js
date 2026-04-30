@@ -288,7 +288,7 @@ const I18N = {
       if (!AudioContextClass) return null;
       const context = new AudioContextClass();
       const master = context.createGain();
-      master.gain.value = 0.28;
+      master.gain.value = 0.9;
       master.connect(context.destination);
       state.audio.context = context;
       state.audio.master = master;
@@ -375,17 +375,35 @@ const I18N = {
       const phrase = () => {
         if (!state.playing) return;
         const phrases = [
-          [523, 659, 784, 988, 880, 784, 659, 587],
-          [587, 740, 880, 1175, 988, 880, 740, 659],
-          [440, 523, 659, 880, 784, 659, 587, 523],
-          [392, 523, 659, 784, 880, 784, 659, 523]
+          [523, 659, 784, 988, 880, 784, 659, 587], 
+          [587, 784, 988, 1175, 1047, 988, 784, 698], 
+          [659, 880, 1047, 1319, 1175, 1047, 880, 784], 
+          [523, 698, 880, 1047, 988, 880, 698, 659], 
+          [659, 784, 1047, 1319, 1175, 1047, 784, 698], 
+          [587, 784, 988, 1175, 1047, 988, 784, 698], 
+          [523, 659, 880, 1047, 988, 880, 659, 587], 
+          [440, 523, 698, 880, 784, 698, 523, 494], 
+          [587, 698, 880, 1175, 1047, 880, 698, 659], 
+          [784, 988, 1175, 1568, 1480, 1175, 988, 880], 
+          [523, 659, 784, 1047, 988, 784, 659, 587], 
+          [659, 880, 1047, 1319, 1175, 1047, 880, 784], 
+          [698, 880, 1047, 1397, 1319, 1047, 880, 784], 
+          [659, 784, 1047, 1319, 1175, 1047, 784, 698], 
+          [587, 784, 988, 1175, 1047, 988, 784, 698], 
+          [698, 784, 988, 1175, 1047, 988, 784, 698]
         ];
-        const bass = [262, 294, 220, 196][phraseIndex % 4];
-        const melody = phrases[phraseIndex % phrases.length];
+        const basses = [
+          262, 196, 220, 175,
+          262, 196, 220, 175,
+          294, 196, 262, 220,
+          175, 262, 196, 196
+        ];
+        const bass = basses[phraseIndex % 16];
+        const melody = phrases[phraseIndex % 16];
         melody.forEach((freq, index) => {
-          playBgmTone(freq, index * 0.16, 0.115, index % 2 ? 0.018 : 0.024);
+          playBgmTone(freq, index * 0.16, 0.115, index % 2 ? 0.027 : 0.036);
         });
-        [0, 0.64, 1.28].forEach((delay) => playBgmTone(bass, delay, 0.18, 0.012));
+        [0, 0.64, 1.28].forEach((delay) => playBgmTone(bass, delay, 0.18, 0.018));
         phraseIndex += 1;
       };
       phrase();
