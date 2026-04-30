@@ -312,6 +312,37 @@ const I18N = {
       oscillator.stop(now + duration + 0.04);
     }
 
+    function playBgmTone(freq, startDelay, duration, volume = 0.02) {
+      const context = initAudio();
+      if (!context || !state.audio.master) return;
+      const now = context.currentTime + startDelay;
+      const main = context.createOscillator();
+      const sparkle = context.createOscillator();
+      const gain = context.createGain();
+      const filter = context.createBiquadFilter();
+
+      main.type = "triangle";
+      sparkle.type = "sine";
+      main.frequency.setValueAtTime(freq, now);
+      sparkle.frequency.setValueAtTime(freq * 2, now);
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(1800, now);
+      filter.frequency.exponentialRampToValueAtTime(3400, now + 0.035);
+      filter.frequency.exponentialRampToValueAtTime(1500, now + duration);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(volume, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      main.connect(filter);
+      sparkle.connect(filter);
+      filter.connect(gain);
+      gain.connect(state.audio.master);
+      main.start(now);
+      sparkle.start(now);
+      main.stop(now + duration + 0.04);
+      sparkle.stop(now + duration + 0.04);
+    }
+
     function playClickSound() {
       playTone(760, 0, 0.055, "triangle", 0.045);
     }
@@ -340,14 +371,25 @@ const I18N = {
     function startBgm() {
       const context = initAudio();
       if (!context || state.audio.bgmTimer) return;
+      let phraseIndex = 0;
       const phrase = () => {
         if (!state.playing) return;
-        [392, 494, 587, 784, 659, 587].forEach((freq, index) => {
-          playTone(freq, index * 0.18, 0.13, index % 2 ? "sine" : "triangle", 0.026);
+        const phrases = [
+          [523, 659, 784, 988, 880, 784, 659, 587],
+          [587, 740, 880, 1175, 988, 880, 740, 659],
+          [440, 523, 659, 880, 784, 659, 587, 523],
+          [392, 523, 659, 784, 880, 784, 659, 523]
+        ];
+        const bass = [262, 294, 220, 196][phraseIndex % 4];
+        const melody = phrases[phraseIndex % phrases.length];
+        melody.forEach((freq, index) => {
+          playBgmTone(freq, index * 0.16, 0.115, index % 2 ? 0.018 : 0.024);
         });
+        [0, 0.64, 1.28].forEach((delay) => playBgmTone(bass, delay, 0.18, 0.012));
+        phraseIndex += 1;
       };
       phrase();
-      state.audio.bgmTimer = setInterval(phrase, 1900);
+      state.audio.bgmTimer = setInterval(phrase, 1340);
     }
 
     function stopBgm() {
