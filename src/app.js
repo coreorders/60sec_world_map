@@ -551,6 +551,18 @@ const I18N = {
         handleMapTap(event);
       }
       state.pointers.delete(event.pointerId);
+      if (wasMultiTouch && state.pointers.size === 1) {
+        const remaining = [...state.pointers.values()][0];
+        state.dragStart = {
+          x: remaining.x,
+          y: remaining.y,
+          tx: state.transform.x,
+          ty: state.transform.y,
+          moved: true
+        };
+        state.lastGestureMoved = true;
+        state.suppressTapUntil = performance.now() + 420;
+      }
       setTimeout(() => {
         if (state.pointers.size === 0) {
           state.dragStart = null;
