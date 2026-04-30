@@ -93,6 +93,7 @@ const I18N = {
 
     const MAP_URL = "./src/map/countries-110m.json";
     const MAX_RANK_ROWS = 100000;
+    const MOBILE_DRAG_Y_GAIN = 1.85;
     const PRODUCTION_HOSTS = new Set(["maps.zzim.site", "coreorders.github.io"]);
     const API_BASE = window.MAP_RANK_API || (PRODUCTION_HOSTS.has(location.hostname) ? "https://map-rank-api.ykdj.workers.dev" : "");
     const $ = (selector) => document.querySelector(selector);
@@ -531,7 +532,7 @@ const I18N = {
         if (points.length === 1 && state.dragStart) {
           const current = clientToSvg(event.clientX, event.clientY);
           const dx = current.x - state.dragStart.x;
-          const dy = current.y - state.dragStart.y;
+          const dy = (current.y - state.dragStart.y) * dragYGain();
           if (Math.hypot(dx, dy) > 5) {
             state.dragStart.moved = true;
             state.lastGestureMoved = true;
@@ -554,6 +555,10 @@ const I18N = {
       wrap.addEventListener("pointerup", handlePointerEnd);
       wrap.addEventListener("pointercancel", handlePointerEnd);
       wrap.addEventListener("pointerleave", handlePointerEnd);
+    }
+
+    function dragYGain() {
+      return window.matchMedia("(pointer: coarse), (max-width: 620px)").matches ? MOBILE_DRAG_Y_GAIN : 1;
     }
 
     function handlePointerEnd(event) {
