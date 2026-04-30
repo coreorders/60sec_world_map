@@ -122,6 +122,8 @@ const I18N = {
       pointers: new Map(),
       dragStart: null,
       lastGestureMoved: false,
+      multiTouchActive: false,
+      suppressTapUntil: 0,
       resultEntry: null,
       remoteScores: [],
       resultRankRows: null,
@@ -497,7 +499,13 @@ const I18N = {
       wrap.addEventListener("pointerdown", (event) => {
         wrap.setPointerCapture(event.pointerId);
         state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-        state.dragStart = { x: event.clientX, y: event.clientY, tx: state.transform.x, ty: state.transform.y, moved: false };
+        if (state.pointers.size > 1) {
+          state.multiTouchActive = true;
+          state.lastGestureMoved = true;
+          state.suppressTapUntil = performance.now() + 420;
+        } else {
+          state.dragStart = { x: event.clientX, y: event.clientY, tx: state.transform.x, ty: state.transform.y, moved: false };
+        }
       });
 
       wrap.addEventListener("pointermove", (event) => {
@@ -505,6 +513,11 @@ const I18N = {
         const previous = state.pointers.get(event.pointerId);
         state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
         const points = [...state.pointers.values()];
+        if (points.length > 1) {
+          state.multiTouchActive = true;
+          state.lastGestureMoved = true;
+          state.suppressTapUntil = performance.now() + 420;
+        }
         if (points.length === 1 && state.dragStart) {
           const dx = event.clientX - state.dragStart.x;
           const dy = event.clientY - state.dragStart.y;
@@ -533,13 +546,17 @@ const I18N = {
     }
 
     function handlePointerEnd(event) {
-      if (event.type === "pointerup" && state.playing && !state.lastGestureMoved) {
+      const wasMultiTouch = state.multiTouchActive || state.pointers.size > 1 || performance.now() < state.suppressTapUntil;
+      if (event.type === "pointerup" && state.playing && !state.lastGestureMoved && !wasMultiTouch) {
         handleMapTap(event);
       }
       state.pointers.delete(event.pointerId);
       setTimeout(() => {
-        state.dragStart = null;
-        state.lastGestureMoved = false;
+        if (state.pointers.size === 0) {
+          state.dragStart = null;
+          state.lastGestureMoved = false;
+          state.multiTouchActive = false;
+        }
       }, 80);
     }
 
