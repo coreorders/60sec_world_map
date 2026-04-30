@@ -426,6 +426,15 @@ const I18N = {
       };
     }
 
+    function clientToSvg(clientX, clientY) {
+      const svg = $("#mapSvg");
+      const pt = svg.createSVGPoint();
+      pt.x = clientX;
+      pt.y = clientY;
+      const raw = pt.matrixTransform(svg.getScreenCTM().inverse());
+      return { x: raw.x, y: raw.y };
+    }
+
     function resetMapView() {
       state.transform = { x: 0, y: 0, scale: 1 };
       applyTransform();
@@ -504,7 +513,8 @@ const I18N = {
           state.lastGestureMoved = true;
           state.suppressTapUntil = performance.now() + 420;
         } else {
-          state.dragStart = { x: event.clientX, y: event.clientY, tx: state.transform.x, ty: state.transform.y, moved: false };
+          const start = clientToSvg(event.clientX, event.clientY);
+          state.dragStart = { x: start.x, y: start.y, tx: state.transform.x, ty: state.transform.y, moved: false };
         }
       });
 
@@ -519,14 +529,15 @@ const I18N = {
           state.suppressTapUntil = performance.now() + 420;
         }
         if (points.length === 1 && state.dragStart) {
-          const dx = event.clientX - state.dragStart.x;
-          const dy = event.clientY - state.dragStart.y;
+          const current = clientToSvg(event.clientX, event.clientY);
+          const dx = current.x - state.dragStart.x;
+          const dy = current.y - state.dragStart.y;
           if (Math.hypot(dx, dy) > 5) {
             state.dragStart.moved = true;
             state.lastGestureMoved = true;
           }
-          state.transform.x = state.dragStart.tx + dx / ($("#mapSvg").clientWidth / 1000);
-          state.transform.y = state.dragStart.ty + dy / ($("#mapSvg").clientHeight / 500);
+          state.transform.x = state.dragStart.tx + dx;
+          state.transform.y = state.dragStart.ty + dy;
           clampTransform();
           applyTransform();
         } else if (points.length === 2 && previous) {
@@ -553,9 +564,10 @@ const I18N = {
       state.pointers.delete(event.pointerId);
       if (wasMultiTouch && state.pointers.size === 1) {
         const remaining = [...state.pointers.values()][0];
+        const point = clientToSvg(remaining.x, remaining.y);
         state.dragStart = {
-          x: remaining.x,
-          y: remaining.y,
+          x: point.x,
+          y: point.y,
           tx: state.transform.x,
           ty: state.transform.y,
           moved: true
