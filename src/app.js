@@ -93,7 +93,7 @@ const I18N = {
 
     const MAP_URL = "./src/map/countries-110m.json";
     const MAX_RANK_ROWS = 100000;
-    const MOBILE_DRAG_Y_GAIN = 1.85;
+    const MOBILE_DRAG_Y_GAIN = 1.55;
     const PRODUCTION_HOSTS = new Set(["maps.zzim.site", "coreorders.github.io"]);
     const API_BASE = window.MAP_RANK_API || (PRODUCTION_HOSTS.has(location.hostname) ? "https://map-rank-api.ykdj.workers.dev" : "");
     const $ = (selector) => document.querySelector(selector);
