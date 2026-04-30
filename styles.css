@@ -272,12 +272,13 @@
       pointer-events: none;
       text-anchor: middle;
       dominant-baseline: central;
-      fill: rgba(17, 33, 43, .9);
+      color: #111820;
+      fill: #111820 !important;
       paint-order: stroke;
-      stroke: rgba(255, 255, 255, .86);
-      stroke-width: 2.4;
+      stroke: rgba(255, 255, 255, .95) !important;
+      stroke-width: 2.8;
       stroke-linejoin: round;
-      font-weight: 850;
+      font-weight: 950;
       letter-spacing: 0;
     }
 

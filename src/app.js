@@ -96,6 +96,7 @@ const I18N = {
     const MAP_URL = "./src/map/countries-110m.json";
     const MAX_RANK_ROWS = 100000;
     const MOBILE_DRAG_Y_GAIN = 1.55;
+    const MAX_MAP_SCALE = 14;
     const PRODUCTION_HOSTS = new Set(["maps.zzim.site", "coreorders.github.io"]);
     const API_BASE = window.MAP_RANK_API || (PRODUCTION_HOSTS.has(location.hostname) ? "https://map-rank-api.ykdj.workers.dev" : "");
     const $ = (selector) => document.querySelector(selector);
@@ -110,6 +111,7 @@ const I18N = {
       playing: false,
       score: 0,
       correctCount: 0,
+      combo: 0,
       attempts: 0,
       gameLeft: 60,
       questionLeft: 10,
@@ -314,10 +316,14 @@ const I18N = {
       playTone(760, 0, 0.055, "triangle", 0.045);
     }
 
-    function playCorrectSound() {
-      playTone(660, 0, 0.08, "triangle", 0.07);
-      playTone(880, 0.075, 0.09, "triangle", 0.075);
-      playTone(1320, 0.16, 0.12, "sine", 0.07);
+    function playCorrectSound(combo = 1) {
+      const step = Math.min(7, Math.max(0, combo - 1));
+      const lift = 2 ** (step / 12);
+      const volume = Math.min(0.105, 0.066 + step * 0.006);
+      playTone(660 * lift, 0, 0.08, "triangle", volume);
+      playTone(880 * lift, 0.075, 0.09, "triangle", volume + 0.005);
+      playTone(1320 * lift, 0.16, 0.12, "sine", volume);
+      if (combo >= 4) playTone(1760 * lift, 0.25, 0.09, "sine", 0.05);
     }
 
     function playWrongSound() {
@@ -408,7 +414,7 @@ const I18N = {
     }
 
     function clampTransformValues(transform) {
-      const scale = Math.max(.9, Math.min(12, transform.scale));
+      const scale = Math.max(.9, Math.min(MAX_MAP_SCALE, transform.scale));
       const pad = 160;
       return {
         scale,
@@ -624,6 +630,7 @@ const I18N = {
       state.playing = true;
       state.score = 0;
       state.correctCount = 0;
+      state.combo = 0;
       state.attempts = 0;
       state.gameLeft = 60;
       state.questionLeft = 10;
@@ -696,7 +703,8 @@ const I18N = {
       state.score += result.points;
       if (result.ok) {
         state.correctCount += 1;
-        playCorrectSound();
+        state.combo += 1;
+        playCorrectSound(state.combo);
         showToast(t("correct"), "good");
         setTimeout(() => state.playing && nextQuestion(), 360);
       } else {
@@ -708,6 +716,7 @@ const I18N = {
     function handleMiss(result) {
       if (!state.playing || state.revealingAnswer) return;
       state.revealingAnswer = true;
+      state.combo = 0;
       recordMiss(result.missReason, result.points, result.distanceKm);
       const message = result.missReason === "timeout"
         ? t("timeout")
