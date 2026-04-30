@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>60초 세계지도</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <strong data-i18n="appName">60초 세계지도</strong>
+        <span data-i18n="tagline">Prove your geo instinct in 60 seconds.</span>
+      </div>
+      <button id="langToggle" aria-label="Toggle language">KR</button>
+    </header>
+
+    <main class="map-wrap" id="mapWrap" aria-label="World map game area">
+      <svg id="mapSvg" viewBox="0 0 1000 500" role="img" aria-label="World map">
+        <defs>
+          <pattern id="oceanGrid" width="50" height="50" patternUnits="userSpaceOnUse">
+            <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="1000" height="500" fill="url(#oceanGrid)"></rect>
+        <g id="viewport">
+          <g id="graticule"></g>
+          <g id="countries"></g>
+          <g id="countryLabels"></g>
+          <g id="reviewLayer"></g>
+        </g>
+      </svg>
+      <section class="hud" id="hud" aria-live="polite">
+        <div class="target">
+          <small data-i18n="targetLabel">Find</small>
+          <b id="targetName">-</b>
+        </div>
+        <div class="stats">
+          <div class="stat"><span data-i18n="gameTimer">Game</span><strong id="gameTime">60</strong></div>
+          <div class="stat"><span data-i18n="questionTimer">Question</span><strong id="questionTime">10</strong></div>
+          <div class="stat"><span data-i18n="score">Score</span><strong id="liveScore">0</strong></div>
+        </div>
+      </section>
+      <div class="toast" id="toast"></div>
+    </main>
+
+    <section class="screen active" id="homeScreen">
+      <div class="sheet">
+        <h1 class="hero-title" data-i18n="homeTitle">60초 세계지도</h1>
+        <p class="lead" data-i18n="homeLead">A 60-second time attack. Zoom, pan, and pin the right country before the clock eats your score.</p>
+        <div class="modes">
+          <button class="mode" data-mode="COUNTRY">
+            <span>
+              <b data-i18n="countryMode">Start Game</b>
+              <span data-i18n="countryModeDesc">Tap the correct country polygon.</span>
+            </span>
+            <strong data-i18n="normal">Normal</strong>
+          </button>
+          <button class="mode is-hidden" data-mode="CITY" hidden>
+            <span>
+              <b data-i18n="cityMode">City Mode</b>
+              <span data-i18n="cityModeDesc">Pin the target city within the tolerance radius.</span>
+            </span>
+            <strong data-i18n="hard">Hard</strong>
+          </button>
+        </div>
+        <p class="mini-help" data-i18n="controlsHint">Drag to move the map. Pinch or wheel to zoom. You have 60 seconds.</p>
+        <div class="leaderboard">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th data-i18n="nickname">Nickname</th><th data-i18n="score">Score</th><th data-i18n="accuracy">Accuracy</th>
+              </tr>
+            </thead>
+            <tbody id="leaderRows"></tbody>
+          </table>
+        </div>
+        <footer class="credit">
+          제작자 : <a href="https://mindaesik.vercel.app/" target="_blank" rel="noopener noreferrer">민대식</a> | ddokddogi@gmail.com
+        </footer>
+      </div>
+    </section>
+
+    <section class="screen" id="resultScreen">
+      <div class="sheet">
+        <h2 class="hero-title" data-i18n="resultTitle">Result</h2>
+        <div class="result-stage">
+          <div class="rank-reel" id="rankReel" aria-live="polite"></div>
+          <div class="score-focus">
+            <span data-i18n="myResult">My Result</span>
+            <strong id="finalScore">0</strong>
+            <div>
+              <b id="finalAccuracy">0%</b>
+              <small data-i18n="accuracy">Accuracy</small>
+            </div>
+            <div>
+              <b id="finalQuestions">0</b>
+              <small data-i18n="questions">Questions</small>
+            </div>
+          </div>
+        </div>
+        <p class="lead" id="reviewText"></p>
+        <div class="form-row">
+          <input id="nicknameInput" maxlength="10" autocomplete="nickname" placeholder="Nickname">
+          <button class="primary" id="saveScoreBtn" data-i18n="saveScore">Save Score</button>
+          <button class="secondary" id="skipScoreBtn" data-i18n="skip">Skip</button>
+        </div>
+        <div class="actions">
+          <button class="primary" id="shareBtn" data-i18n="share">Share</button>
+          <button class="primary" id="retryBtn" data-i18n="retry">Try Again</button>
+          <button class="secondary" id="homeBtn" data-i18n="home">Home</button>
+        </div>
+        <footer class="credit">
+          제작자 : <a href="https://mindaesik.vercel.app/" target="_blank" rel="noopener noreferrer">민대식</a> | ddokddogi@gmail.com
+        </footer>
+      </div>
+    </section>
+  </div>
+
+  <script src="vendor/d3.min.js"></script>
+  <script src="vendor/topojson-client.min.js"></script>
+  <script src="src/data/countries.js?v=5"></script>
+  <script src="src/data/cities.js?v=5"></script>
+  <script src="src/app.js?v=14"></script>
+</body>
+</html>
+

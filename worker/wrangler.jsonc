@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "map-rank-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-04-30",
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "map-rank-db",
+      "database_id": "840342b1-7924-489b-aae4-58b78c547004"
+    }
+  ]
+}
