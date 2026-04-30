@@ -20,6 +20,7 @@ const I18N = {
         questionTimer: "Question",
         nickname: "Nickname",
         score: "Score",
+        finishNow: "Finish",
         myResult: "My Result",
         myRank: "My Rank",
         rankSuffix: "",
@@ -63,6 +64,7 @@ const I18N = {
         questionTimer: "문제",
         nickname: "닉네임",
         score: "점수",
+        finishNow: "여기까지하기",
         myResult: "내 기록",
         myRank: "내 순위",
         rankSuffix: "위",
@@ -1075,6 +1077,13 @@ const I18N = {
       });
 
       $("#shareBtn").addEventListener("click", shareResult);
+
+      $("#finishNowBtn").addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (!state.playing) return;
+        playClickSound();
+        finishGame();
+      });
 
       $("#homeBtn").addEventListener("click", async () => {
         await saveScore($("#nicknameInput").value);

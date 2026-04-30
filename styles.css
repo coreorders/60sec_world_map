@@ -114,7 +114,7 @@
       width: min(720px, calc(100% - 24px));
       transform: translateX(-50%);
       display: none;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto auto;
       align-items: end;
       gap: 10px;
       pointer-events: none;
@@ -196,6 +196,19 @@
       margin-top: 1px;
       font-size: 17px;
       line-height: 1.1;
+    }
+
+    .finish-now {
+      pointer-events: auto;
+      min-height: 50px;
+      align-self: stretch;
+      border-color: rgba(245, 159, 0, .42);
+      background: linear-gradient(135deg, #ffd43b, #ff922b);
+      color: #3b2500;
+      font-size: 13px;
+      font-weight: 900;
+      box-shadow: 0 12px 26px rgba(245, 159, 0, .18);
+      white-space: nowrap;
     }
 
     .map-wrap {
@@ -876,6 +889,12 @@
 
       .stat strong {
         font-size: 15px;
+      }
+
+      .finish-now {
+        min-height: 38px;
+        padding: 0 10px;
+        font-size: 13px;
       }
 
       .modes, .result-stage, .form-row {
