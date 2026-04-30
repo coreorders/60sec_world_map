@@ -39,7 +39,7 @@ npm run deploy
 After deployment, connect the Worker custom domain:
 
 ```text
-https://api.maps.zzim.site
+https://map-rank-api.ykdj.workers.dev
 ```
 
-When the game runs on `maps.zzim.site` or `coreorders.github.io`, it automatically uses `https://api.maps.zzim.site` for rankings.
+When the game runs on `maps.zzim.site` or `coreorders.github.io`, it automatically uses `https://map-rank-api.ykdj.workers.dev` for rankings.

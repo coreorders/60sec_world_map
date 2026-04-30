@@ -25,7 +25,13 @@ npm run db:remote
 npm run deploy
 ```
 
-After deploy, connect a custom domain such as `api.maps.zzim.site` to this Worker.
+After deploy, the game can use the default Worker URL:
+
+```text
+https://map-rank-api.ykdj.workers.dev
+```
+
+You can later connect a custom domain such as `api.maps.zzim.site` if DNS is available.
 
 ## Endpoints
 
