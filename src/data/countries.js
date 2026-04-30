@@ -763,7 +763,7 @@ window.COUNTRY_DATA = [
     "id": "408",
     "mapName": "North Korea",
     "name_en": "North Korea",
-    "name_ko": "조선",
+    "name_ko": "북한",
     "lat": 40.0,
     "lng": 127.0
   },
