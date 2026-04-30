@@ -1,4 +1,7 @@
 const ALLOWED_ORIGINS = new Set([
+  "https://maps.zzim.site",
+  "http://maps.zzim.site",
+  "https://coreorders.github.io",
   "https://map.zzim.site",
   "http://map.zzim.site",
   "http://127.0.0.1:4173",
@@ -159,7 +162,7 @@ function clampNumber(value, min, max) {
 }
 
 function corsHeaders(origin) {
-  const allowOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "https://map.zzim.site";
+  const allowOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "https://maps.zzim.site";
   return {
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",

@@ -1,6 +1,6 @@
 # 60초 세계지도 Ranking API
 
-Cloudflare Worker + D1 ranking API for `map.zzim.site`.
+Cloudflare Worker + D1 ranking API for `maps.zzim.site`.
 
 ## Setup
 
@@ -25,7 +25,7 @@ npm run db:remote
 npm run deploy
 ```
 
-After deploy, connect a custom domain such as `api.map.zzim.site` to this Worker.
+After deploy, connect a custom domain such as `api.maps.zzim.site` to this Worker.
 
 ## Endpoints
 

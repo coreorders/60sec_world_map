@@ -93,7 +93,8 @@ const I18N = {
 
     const MAP_URL = "./src/map/countries-110m.json";
     const MAX_RANK_ROWS = 100000;
-    const API_BASE = window.MAP_RANK_API || (location.hostname === "map.zzim.site" ? "https://api.map.zzim.site" : "");
+    const PRODUCTION_HOSTS = new Set(["maps.zzim.site", "coreorders.github.io"]);
+    const API_BASE = window.MAP_RANK_API || (PRODUCTION_HOSTS.has(location.hostname) ? "https://api.maps.zzim.site" : "");
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => Array.from(document.querySelectorAll(selector));
     const projection = d3.geoNaturalEarth1().fitExtent([[20, 20], [980, 480]], { type: "Sphere" });
@@ -973,7 +974,7 @@ const I18N = {
     }
 
     function shareResult() {
-      const url = "https://map.zzim.site";
+      const url = "https://maps.zzim.site";
       const text = state.locale === "ko"
         ? `점수: ${state.score}점\n정답률: ${accuracyPercent()}%\n\n${url}`
         : `Score: ${state.score}\nAccuracy: ${accuracyPercent()}%\n\n${url}`;

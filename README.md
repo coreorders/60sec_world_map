@@ -21,7 +21,8 @@ This repository can be deployed as a static site with GitHub Pages or Cloudflare
 Production site:
 
 ```text
-https://map.zzim.site
+https://maps.zzim.site
+https://coreorders.github.io/60sec_world_map/
 ```
 
 ## Ranking API
@@ -38,7 +39,7 @@ npm run deploy
 After deployment, connect the Worker custom domain:
 
 ```text
-https://api.map.zzim.site
+https://api.maps.zzim.site
 ```
 
-When the game runs on `map.zzim.site`, it automatically uses `https://api.map.zzim.site` for rankings.
+When the game runs on `maps.zzim.site` or `coreorders.github.io`, it automatically uses `https://api.maps.zzim.site` for rankings.
