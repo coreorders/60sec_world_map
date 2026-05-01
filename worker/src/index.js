@@ -39,6 +39,28 @@ export default {
         return json(entry, 201, origin);
       }
 
+      if (url.pathname === "/scores" && request.method === "PATCH") {
+        const body = await request.json();
+        const id = String(body.id || "");
+        const nickname = normalizeNickname(body.nickname);
+        if (!id) return json({ error: "Missing score id" }, 400, origin);
+
+        await env.DB.prepare(`
+          UPDATE scores
+          SET nickname = ?
+          WHERE id = ?
+        `).bind(nickname, id).run();
+
+        const updated = await env.DB.prepare(`
+          SELECT id, game_mode, nickname, score, accuracy, attempts, locale, created_at
+          FROM scores
+          WHERE id = ?
+        `).bind(id).first();
+
+        if (!updated) return json({ error: "Score not found" }, 404, origin);
+        return json(updated, 200, origin);
+      }
+
       if (url.pathname === "/leaderboard" && request.method === "GET") {
         const period = periodRange(url.searchParams.get("period") || "monthly");
         const limit = clampInt(url.searchParams.get("limit"), 1, MAX_LIMIT, 10);
@@ -115,17 +137,20 @@ export default {
 function normalizeScore(body) {
   const now = Date.now();
   const id = crypto.randomUUID();
-  const nickname = String(body.nickname || "Anonymous").trim().slice(0, 10) || "Anonymous";
   return {
     id,
     game_mode: body.game_mode === "CITY" ? "CITY" : "COUNTRY",
-    nickname,
+    nickname: normalizeNickname(body.nickname),
     score: clampNumber(body.score, 0, 10000),
     accuracy: clampNumber(body.accuracy, 0, 100),
     attempts: clampNumber(body.attempts, 0, 1000),
     locale: body.locale === "en" ? "en" : "ko",
     created_at: now
   };
+}
+
+function normalizeNickname(value) {
+  return String(value || "Anonymous").trim().slice(0, 10) || "Anonymous";
 }
 
 function periodRange(period) {
@@ -189,7 +214,7 @@ function corsHeaders(origin) {
   const allowOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "https://maps.zzim.site";
   return {
     "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Vary": "Origin"
   };

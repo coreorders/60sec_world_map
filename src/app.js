@@ -139,6 +139,7 @@ const I18N = {
       remoteScores: [],
       leaderboardLimit: HOME_RANK_LIMIT,
       resultRankRows: null,
+      savePromise: null,
       audio: {
         context: null,
         master: null,
@@ -777,6 +778,7 @@ const I18N = {
       state.saved = false;
       state.resultEntry = null;
       state.resultRankRows = null;
+      state.savePromise = null;
       state.pool = shuffle(mode === "COUNTRY" ? COUNTRY_DATA : CITY_DATA);
       clearInterval(state.timerId);
       clearReview();
@@ -907,6 +909,7 @@ const I18N = {
       $("#reviewText").textContent = state.misses.length ? t("reviewSome") : t("reviewNone");
       $("#nicknameInput").value = "";
       renderReview();
+      autoSaveScore();
     }
 
     function updateHud() {
@@ -987,10 +990,8 @@ const I18N = {
       });
     }
 
-    async function saveScore(name) {
-      if (state.saved) return;
-      const nickname = (name || "").trim().slice(0, 10) || t("anonymous");
-      const entry = {
+    function currentScoreEntry(nickname) {
+      return {
         id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
         game_mode: state.mode,
         nickname,
@@ -1000,9 +1001,23 @@ const I18N = {
         created_at: Date.now(),
         locale: state.locale
       };
+    }
+
+    async function autoSaveScore(nickname = t("anonymous")) {
+      if (state.saved) return state.resultEntry;
+      if (state.savePromise) return state.savePromise;
+      const entry = currentScoreEntry(nickname);
       state.saved = true;
       state.resultEntry = { ...entry, isCurrent: true };
+      renderResultReel();
 
+      state.savePromise = persistNewScore(entry).finally(() => {
+        state.savePromise = null;
+      });
+      return state.savePromise;
+    }
+
+    async function persistNewScore(entry) {
       if (API_BASE) {
         try {
           const savedEntry = await postScore(entry);
@@ -1011,7 +1026,7 @@ const I18N = {
           await refreshRemoteLeaderboard();
           renderLeaderboard();
           renderResultReel();
-          return;
+          return state.resultEntry;
         } catch (error) {
           console.warn("Remote score save failed. Falling back to local scores.", error);
         }
@@ -1021,6 +1036,36 @@ const I18N = {
       records.push(entry);
       const trimmedRecords = records.sort(compareScoreRows).slice(0, MAX_RANK_ROWS);
       localStorage.setItem("wpr_scores", JSON.stringify(trimmedRecords));
+      renderLeaderboard();
+      renderResultReel();
+      return state.resultEntry;
+    }
+
+    async function saveScore(name) {
+      const nickname = (name || "").trim().slice(0, 10) || t("anonymous");
+      if (!state.saved) {
+        await autoSaveScore(nickname);
+        return;
+      }
+      if (state.savePromise) await state.savePromise;
+      if (!state.resultEntry || state.resultEntry.nickname === nickname) return;
+
+      if (API_BASE) {
+        try {
+          const updatedEntry = await updateScoreNickname(state.resultEntry.id, nickname);
+          state.resultEntry = { ...updatedEntry, isCurrent: true };
+          await loadRemoteRank(updatedEntry.id);
+          await refreshRemoteLeaderboard();
+          renderLeaderboard();
+          renderResultReel();
+          return;
+        } catch (error) {
+          console.warn("Remote score save failed. Falling back to local scores.", error);
+        }
+      }
+
+      updateLocalNickname(state.resultEntry.id, nickname);
+      state.resultEntry = { ...state.resultEntry, nickname };
       renderLeaderboard();
       renderResultReel();
     }
@@ -1044,6 +1089,20 @@ const I18N = {
           game_mode: "COUNTRY"
         })
       });
+    }
+
+    async function updateScoreNickname(id, nickname) {
+      return apiJson("/scores", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, nickname })
+      });
+    }
+
+    function updateLocalNickname(id, nickname) {
+      const records = loadScores();
+      const nextRecords = records.map((row) => row.id === id ? { ...row, nickname } : row);
+      localStorage.setItem("wpr_scores", JSON.stringify(nextRecords));
     }
 
     async function refreshRemoteLeaderboard(limit = state.leaderboardLimit) {
