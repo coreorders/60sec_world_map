@@ -429,7 +429,7 @@ const I18N = {
     function startMp3Bgm() {
       if (state.audio.bgmSourceUnavailable) return false;
       if (!state.audio.bgmAudio) {
-        const audio = new Audio(new URL("assets/bgm.mp3", document.baseURI).href);
+        const audio = new Audio(new URL("bgm.mp3", document.baseURI).href);
         audio.loop = true;
         audio.preload = "auto";
         audio.volume = 0.72;
