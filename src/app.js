@@ -97,6 +97,8 @@ const I18N = {
     const MAX_RANK_ROWS = 100000;
     const MOBILE_DRAG_Y_GAIN = 1.55;
     const MAX_MAP_SCALE = 14;
+    const WORLD_WIDTH = 1000;
+    const WORLD_COPIES = [-WORLD_WIDTH, 0, WORLD_WIDTH];
     const PRODUCTION_HOSTS = new Set(["maps.zzim.site", "coreorders.github.io"]);
     const API_BASE = window.MAP_RANK_API || (PRODUCTION_HOSTS.has(location.hostname) ? "https://map-rank-api.ykdj.workers.dev" : "");
     const $ = (selector) => document.querySelector(selector);
@@ -418,10 +420,13 @@ const I18N = {
 
     async function renderMap() {
       const graticule = $("#graticule");
-      const graticulePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      graticulePath.setAttribute("class", "graticule");
-      graticulePath.setAttribute("d", geoPath(d3.geoGraticule10()));
-      graticule.appendChild(graticulePath);
+      WORLD_COPIES.forEach((offset) => {
+        const graticulePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        graticulePath.setAttribute("class", "graticule");
+        graticulePath.setAttribute("d", geoPath(d3.geoGraticule10()));
+        graticulePath.setAttribute("transform", `translate(${offset} 0)`);
+        graticule.appendChild(graticulePath);
+      });
 
       const countriesLayer = $("#countries");
       const labelsLayer = $("#countryLabels");
@@ -432,23 +437,28 @@ const I18N = {
       world.features.forEach((feature) => {
         const featureName = feature.properties && feature.properties.name ? feature.properties.name : "Unknown";
         const id = feature.id == null ? `custom:${featureName}` : String(feature.id).padStart(3, "0");
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("class", "country");
-        path.dataset.countryId = id;
-        path.setAttribute("d", geoPath(feature));
         state.countryCentroids.set(id, geoPath.centroid(feature));
         state.countrySegments.set(id, buildCountrySegments(feature));
-        countriesLayer.appendChild(path);
+        WORLD_COPIES.forEach((offset) => {
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.setAttribute("class", "country");
+          path.dataset.countryId = id;
+          path.setAttribute("d", geoPath(feature));
+          path.setAttribute("transform", `translate(${offset} 0)`);
+          countriesLayer.appendChild(path);
+        });
         const country = COUNTRY_BY_ID.get(id);
         if (country) {
           const labelPoint = getCountryPoint(country);
-          const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-          label.setAttribute("class", "country-label");
-          label.dataset.countryId = id;
-          label.setAttribute("x", labelPoint.x);
-          label.setAttribute("y", labelPoint.y);
-          label.textContent = localName(country);
-          labelsLayer.appendChild(label);
+          WORLD_COPIES.forEach((offset) => {
+            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            label.setAttribute("class", "country-label");
+            label.dataset.countryId = id;
+            label.setAttribute("x", labelPoint.x + offset);
+            label.setAttribute("y", labelPoint.y);
+            label.textContent = localName(country);
+            labelsLayer.appendChild(label);
+          });
         }
       });
 
@@ -478,9 +488,23 @@ const I18N = {
       const pad = 160;
       return {
         scale,
-        x: Math.max(-1000 * scale + pad, Math.min(1000 - pad, transform.x)),
+        x: wrapTranslateX(transform.x, scale),
         y: Math.max(-500 * scale + pad, Math.min(500 - pad, transform.y))
       };
+    }
+
+    function wrapTranslateX(x, scale) {
+      const width = WORLD_WIDTH * scale;
+      if (!Number.isFinite(width) || width <= 0) return x;
+      let wrapped = ((x % width) + width) % width;
+      if (wrapped > 0) wrapped -= width;
+      return wrapped;
+    }
+
+    function normalizeMapPoint(point) {
+      let x = ((point.x % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH;
+      if (x === WORLD_WIDTH) x = 0;
+      return { x, y: point.y };
     }
 
     function screenToMap(event) {
@@ -489,10 +513,10 @@ const I18N = {
       pt.x = event.clientX;
       pt.y = event.clientY;
       const raw = pt.matrixTransform(svg.getScreenCTM().inverse());
-      return {
+      return normalizeMapPoint({
         x: (raw.x - state.transform.x) / state.transform.scale,
         y: (raw.y - state.transform.y) / state.transform.scale
-      };
+      });
     }
 
     function clientToSvg(clientX, clientY) {
@@ -542,11 +566,28 @@ const I18N = {
 
     function focusMapOn(point, duration = 500) {
       const targetScale = Math.max(state.transform.scale, 4.8);
+      const scale = Math.min(6, targetScale);
+      const wrappedPoint = nearestWrappedPoint(point, scale);
       return animateTransformTo({
-        scale: Math.min(6, targetScale),
-        x: 500 - point.x * Math.min(6, targetScale),
-        y: 250 - point.y * Math.min(6, targetScale)
+        scale,
+        x: 500 - wrappedPoint.x * scale,
+        y: 250 - wrappedPoint.y * scale
       }, duration);
+    }
+
+    function nearestWrappedPoint(point, scale) {
+      const candidates = WORLD_COPIES.map((offset) => ({ x: point.x + offset, y: point.y }));
+      let best = candidates[0];
+      let bestDistance = Infinity;
+      candidates.forEach((candidate) => {
+        const targetX = 500 - candidate.x * scale;
+        const distance = Math.abs(targetX - state.transform.x);
+        if (distance < bestDistance) {
+          best = candidate;
+          bestDistance = distance;
+        }
+      });
+      return best;
     }
 
     function zoomAt(clientX, clientY, factor) {
@@ -838,10 +879,10 @@ const I18N = {
     }
 
     function flashCountry(id, className, duration = 430) {
-      const node = document.querySelector(`[data-country-id="${id}"]`);
-      if (!node) return;
-      node.classList.add(className);
-      setTimeout(() => node.classList.remove(className), duration);
+      const nodes = $$(`[data-country-id="${id}"]`);
+      if (!nodes.length) return;
+      nodes.forEach((node) => node.classList.add(className));
+      setTimeout(() => nodes.forEach((node) => node.classList.remove(className)), duration);
     }
 
     function clearCountryFeedback() {
@@ -1147,7 +1188,18 @@ const I18N = {
 
       $("#shareBtn").addEventListener("click", shareResult);
 
+      $("#finishNowBtn").addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      });
+
+      $("#finishNowBtn").addEventListener("pointerup", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      });
+
       $("#finishNowBtn").addEventListener("click", (event) => {
+        event.preventDefault();
         event.stopPropagation();
         if (!state.playing) return;
         playClickSound();
