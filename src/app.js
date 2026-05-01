@@ -44,6 +44,7 @@ const I18N = {
         yearly: "Yearly",
         anonymous: "Anonymous",
         emptyBoard: "No scores yet",
+        rankMore: "Show top 200",
         country: "Country",
         city: "City"
       },
@@ -88,6 +89,7 @@ const I18N = {
         yearly: "연간",
         anonymous: "Anonymous",
         emptyBoard: "아직 기록이 없습니다",
+        rankMore: "200위까지 보기",
         country: "국가",
         city: "도시"
       }
@@ -95,6 +97,8 @@ const I18N = {
 
     const MAP_URL = "./src/map/countries-110m.json";
     const MAX_RANK_ROWS = 100000;
+    const HOME_RANK_LIMIT = 50;
+    const HOME_RANK_EXPANDED_LIMIT = 200;
     const MOBILE_DRAG_Y_GAIN = 1.55;
     const MAX_MAP_SCALE = 14;
     const WORLD_WIDTH = 1000;
@@ -133,6 +137,7 @@ const I18N = {
       suppressTapUntil: 0,
       resultEntry: null,
       remoteScores: [],
+      leaderboardLimit: HOME_RANK_LIMIT,
       resultRankRows: null,
       audio: {
         context: null,
@@ -1041,10 +1046,10 @@ const I18N = {
       });
     }
 
-    async function refreshRemoteLeaderboard() {
+    async function refreshRemoteLeaderboard(limit = state.leaderboardLimit) {
       if (!API_BASE) return;
       try {
-        const data = await apiJson("/leaderboard?period=monthly&limit=10");
+        const data = await apiJson(`/leaderboard?period=monthly&limit=${limit}`);
         state.remoteScores = Array.isArray(data.rows) ? data.rows : [];
       } catch (error) {
         console.warn("Remote leaderboard failed.", error);
@@ -1094,14 +1099,21 @@ const I18N = {
     function renderLeaderboard() {
       state.mode = "COUNTRY";
       state.period = "monthly";
-      const rows = monthlyCountryScores().sort(compareScoreRows).slice(0, 10);
+      const allRows = monthlyCountryScores().sort(compareScoreRows);
+      const rows = allRows.slice(0, state.leaderboardLimit);
       const body = $("#leaderRows");
+      const moreButton = $("#rankMoreBtn");
       body.innerHTML = "";
       if (!rows.length) {
         const tr = document.createElement("tr");
         tr.innerHTML = `<td colspan="4">${t("emptyBoard")}</td>`;
         body.appendChild(tr);
+        if (moreButton) moreButton.hidden = true;
         return;
+      }
+      if (moreButton) {
+        moreButton.hidden = state.leaderboardLimit >= HOME_RANK_EXPANDED_LIMIT || allRows.length < HOME_RANK_LIMIT;
+        moreButton.disabled = false;
       }
       rows.forEach((row, index) => {
         const tr = document.createElement("tr");
@@ -1219,6 +1231,13 @@ const I18N = {
       });
 
       $("#shareBtn").addEventListener("click", shareResult);
+
+      $("#rankMoreBtn").addEventListener("click", async () => {
+        state.leaderboardLimit = HOME_RANK_EXPANDED_LIMIT;
+        $("#rankMoreBtn").disabled = true;
+        await refreshRemoteLeaderboard(HOME_RANK_EXPANDED_LIMIT);
+        renderLeaderboard();
+      });
 
       $("#finishNowBtn").addEventListener("pointerdown", (event) => {
         event.preventDefault();

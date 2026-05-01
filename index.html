@@ -68,14 +68,17 @@
         </div>
         <p class="mini-help" data-i18n="controlsHint">Drag to move the map. Pinch or wheel to zoom. You have 60 seconds.</p>
         <div class="leaderboard">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th><th data-i18n="nickname">Nickname</th><th data-i18n="score">Score</th><th data-i18n="accuracy">Accuracy</th>
-              </tr>
-            </thead>
-            <tbody id="leaderRows"></tbody>
-          </table>
+          <div class="leaderboard-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th data-i18n="nickname">Nickname</th><th data-i18n="score">Score</th><th data-i18n="accuracy">Accuracy</th>
+                </tr>
+              </thead>
+              <tbody id="leaderRows"></tbody>
+            </table>
+          </div>
+          <button class="rank-more" id="rankMoreBtn" type="button" data-i18n="rankMore">Show top 200</button>
         </div>
         <footer class="credit">
           제작자 : <a href="https://mindaesik.vercel.app/" target="_blank" rel="noopener noreferrer">민대식</a> | ddokddogi@gmail.com
@@ -123,7 +126,7 @@
   <script src="vendor/topojson-client.min.js"></script>
   <script src="src/data/countries.js?v=6"></script>
   <script src="src/data/cities.js?v=5"></script>
-  <script src="src/app.js?v=28"></script>
+  <script src="src/app.js?v=29"></script>
 </body>
 </html>
 
