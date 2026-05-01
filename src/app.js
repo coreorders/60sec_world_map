@@ -137,7 +137,9 @@ const I18N = {
       audio: {
         context: null,
         master: null,
-        bgmTimer: 0
+        bgmTimer: 0,
+        bgmAudio: null,
+        bgmSourceUnavailable: false
       }
     };
 
@@ -371,6 +373,7 @@ const I18N = {
     }
 
     function startBgm() {
+      if (startMp3Bgm()) return;
       const context = initAudio();
       if (!context || state.audio.bgmTimer) return;
       let phraseIndex = 0;
@@ -413,9 +416,38 @@ const I18N = {
     }
 
     function stopBgm() {
-      if (!state.audio.bgmTimer) return;
-      clearInterval(state.audio.bgmTimer);
-      state.audio.bgmTimer = 0;
+      if (state.audio.bgmAudio) {
+        state.audio.bgmAudio.pause();
+        state.audio.bgmAudio.currentTime = 0;
+      }
+      if (state.audio.bgmTimer) {
+        clearInterval(state.audio.bgmTimer);
+        state.audio.bgmTimer = 0;
+      }
+    }
+
+    function startMp3Bgm() {
+      if (state.audio.bgmSourceUnavailable) return false;
+      if (!state.audio.bgmAudio) {
+        const audio = new Audio(new URL("assets/bgm.mp3", document.baseURI).href);
+        audio.loop = true;
+        audio.preload = "auto";
+        audio.volume = 0.72;
+        audio.addEventListener("error", () => {
+          state.audio.bgmSourceUnavailable = true;
+          state.audio.bgmAudio = null;
+          if (state.playing) startBgm();
+        }, { once: true });
+        state.audio.bgmAudio = audio;
+      }
+      const playPromise = state.audio.bgmAudio.play();
+      if (!playPromise || typeof playPromise.catch !== "function") return true;
+      playPromise.catch(() => {
+        state.audio.bgmSourceUnavailable = true;
+        state.audio.bgmAudio = null;
+        if (state.playing) startBgm();
+      });
+      return true;
     }
 
     async function renderMap() {

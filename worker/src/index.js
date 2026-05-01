@@ -131,15 +131,39 @@ function normalizeScore(body) {
 function periodRange(period) {
   const now = new Date();
   if (period === "weekly") {
-    const start = new Date(now);
-    start.setUTCHours(0, 0, 0, 0);
-    start.setUTCDate(start.getUTCDate() - ((start.getUTCDay() + 6) % 7));
+    const start = kstDateStart(now);
+    start.setUTCDate(start.getUTCDate() - ((kstDay(now) + 6) % 7));
     return { name: "weekly", start: start.getTime() };
   }
   if (period === "yearly") {
-    return { name: "yearly", start: Date.UTC(now.getUTCFullYear(), 0, 1) };
+    const kst = kstParts(now);
+    return { name: "yearly", start: kstStartToUtc(kst.year, 0, 1) };
   }
-  return { name: "monthly", start: Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1) };
+  const kst = kstParts(now);
+  return { name: "monthly", start: kstStartToUtc(kst.year, kst.month, 1) };
+}
+
+function kstParts(date) {
+  const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  return {
+    year: kst.getUTCFullYear(),
+    month: kst.getUTCMonth(),
+    date: kst.getUTCDate(),
+    day: kst.getUTCDay()
+  };
+}
+
+function kstDay(date) {
+  return kstParts(date).day;
+}
+
+function kstDateStart(date) {
+  const kst = kstParts(date);
+  return new Date(kstStartToUtc(kst.year, kst.month, kst.date));
+}
+
+function kstStartToUtc(year, month, date) {
+  return Date.UTC(year, month, date) - 9 * 60 * 60 * 1000;
 }
 
 function withRanks(rows, startRank) {
