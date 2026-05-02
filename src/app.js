@@ -43,6 +43,7 @@ const I18N = {
         monthly: "Monthly Ranking",
         yearly: "Yearly",
         anonymous: "Anonymous",
+        loadingBoard: "Loading rankings...",
         emptyBoard: "No scores yet",
         rankMore: "Show top 200",
         country: "Country",
@@ -88,6 +89,7 @@ const I18N = {
         monthly: "월간 랭킹",
         yearly: "연간",
         anonymous: "Anonymous",
+        loadingBoard: "순위를 불러오는 중입니다",
         emptyBoard: "아직 기록이 없습니다",
         rankMore: "200위까지 보기",
         country: "국가",
@@ -137,6 +139,7 @@ const I18N = {
       suppressTapUntil: 0,
       resultEntry: null,
       remoteScores: [],
+      leaderboardLoading: Boolean(API_BASE),
       leaderboardLimit: HOME_RANK_LIMIT,
       resultRankRows: null,
       savePromise: null,
@@ -1107,11 +1110,14 @@ const I18N = {
 
     async function refreshRemoteLeaderboard(limit = state.leaderboardLimit) {
       if (!API_BASE) return;
+      state.leaderboardLoading = true;
       try {
         const data = await apiJson(`/leaderboard?period=monthly&limit=${limit}`);
         state.remoteScores = Array.isArray(data.rows) ? data.rows : [];
       } catch (error) {
         console.warn("Remote leaderboard failed.", error);
+      } finally {
+        state.leaderboardLoading = false;
       }
     }
 
@@ -1163,6 +1169,13 @@ const I18N = {
       const body = $("#leaderRows");
       const moreButton = $("#rankMoreBtn");
       body.innerHTML = "";
+      if (state.leaderboardLoading) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="4">${t("loadingBoard")}</td>`;
+        body.appendChild(tr);
+        if (moreButton) moreButton.hidden = true;
+        return;
+      }
       if (!rows.length) {
         const tr = document.createElement("tr");
         tr.innerHTML = `<td colspan="4">${t("emptyBoard")}</td>`;
