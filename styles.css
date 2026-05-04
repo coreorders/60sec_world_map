@@ -224,6 +224,8 @@
 
     .app.in-game .map-wrap {
       background:
+        linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,.12)),
+        url("game-bg.png") center / cover no-repeat,
         radial-gradient(circle at 18% 10%, rgba(255, 212, 59, .22), transparent 18rem),
         radial-gradient(circle at 82% 8%, rgba(18, 184, 134, .18), transparent 17rem),
         linear-gradient(180deg, #f4fbff 0%, var(--game-sea) 48%, #eafff6 100%);
@@ -234,11 +236,14 @@
     }
 
     .app.in-game .country {
-      fill: var(--game-land);
       stroke: rgba(30, 73, 84, .34);
     }
 
-    .app.in-game .country:hover {
+    .app.in-game .country:not(.has-flag) {
+      fill: var(--game-land);
+    }
+
+    .app.in-game .country:not(.has-flag):hover {
       fill: var(--game-land-hover);
     }
 
@@ -255,14 +260,22 @@
     }
 
     .country {
-      fill: var(--land);
       stroke: rgba(255,255,255,.36);
       stroke-width: .7;
       vector-effect: non-scaling-stroke;
       transition: fill .16s ease, filter .16s ease;
     }
 
-    .country:hover { fill: var(--land-hover); }
+    .country:not(.has-flag) {
+      fill: var(--land);
+    }
+
+    .country.has-flag {
+      opacity: .9;
+    }
+
+    .country:not(.has-flag):hover { fill: var(--land-hover); }
+    .country.has-flag:hover { filter: saturate(1.1) brightness(1.04); }
     .country.hit { fill: var(--accent); filter: drop-shadow(0 0 8px rgba(32,201,151,.62)); }
     .country.miss { fill: var(--danger); filter: drop-shadow(0 0 8px rgba(255,107,107,.58)); }
     .country.correct-answer { fill: #228be6; filter: drop-shadow(0 0 12px rgba(34,139,230,.82)); }
@@ -275,8 +288,8 @@
       color: #111820;
       fill: #111820 !important;
       paint-order: stroke;
-      stroke: rgba(255, 255, 255, .95) !important;
-      stroke-width: 2.8;
+      stroke: rgba(255, 255, 255, .86) !important;
+      stroke-width: .84;
       stroke-linejoin: round;
       font-weight: 950;
       letter-spacing: 0;

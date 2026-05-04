@@ -7,10 +7,12 @@ const staticFiles = [
   "icon.png",
   "favicon.png",
   "og-image.png",
+  "game-bg.png",
   "assets/bgm.mp3",
   "vendor/d3.min.js",
   "vendor/topojson-client.min.js",
   "src/app.js",
+  "src/data/iso2.js",
   "src/data/countries.js",
   "src/data/cities.js",
   "src/map/countries-110m.json"

@@ -1,6 +1,7 @@
 const COUNTRY_DATA = window.COUNTRY_DATA || [];
 const COUNTRY_BY_ID = window.COUNTRY_BY_ID || new Map();
 const CITY_DATA = window.CITY_DATA || [];
+const COUNTRY_ISO2 = window.COUNTRY_ISO2 || {};
 
 const I18N = {
       en: {
@@ -501,6 +502,7 @@ const I18N = {
 
     async function renderMap() {
       const graticule = $("#graticule");
+      renderFlagPatterns();
       WORLD_COPIES.forEach((offset) => {
         const graticulePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
         graticulePath.setAttribute("class", "graticule");
@@ -522,10 +524,11 @@ const I18N = {
         state.countrySegments.set(id, buildCountrySegments(feature));
         WORLD_COPIES.forEach((offset) => {
           const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          path.setAttribute("class", "country");
+          path.setAttribute("class", COUNTRY_ISO2[id] ? "country has-flag" : "country");
           path.dataset.countryId = id;
           path.setAttribute("d", geoPath(feature));
           path.setAttribute("transform", `translate(${offset} 0)`);
+          if (COUNTRY_ISO2[id]) path.setAttribute("fill", `url(#flag-${id})`);
           countriesLayer.appendChild(path);
         });
         const country = COUNTRY_BY_ID.get(id);
@@ -555,12 +558,34 @@ const I18N = {
       applyTransform();
     }
 
+    function renderFlagPatterns() {
+      const root = $("#flagPatterns");
+      Object.entries(COUNTRY_ISO2).forEach(([id, iso2]) => {
+        const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
+        pattern.setAttribute("id", `flag-${id}`);
+        pattern.setAttribute("patternUnits", "objectBoundingBox");
+        pattern.setAttribute("patternContentUnits", "objectBoundingBox");
+        pattern.setAttribute("width", "1");
+        pattern.setAttribute("height", "1");
+
+        const image = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        image.setAttribute("href", `https://flagcdn.com/w320/${iso2}.png`);
+        image.setAttribute("x", "0");
+        image.setAttribute("y", "0");
+        image.setAttribute("width", "1");
+        image.setAttribute("height", "1");
+        image.setAttribute("preserveAspectRatio", "xMidYMid slice");
+        pattern.appendChild(image);
+        root.appendChild(pattern);
+      });
+    }
+
     function applyTransform() {
       const { x, y, scale } = state.transform;
       $("#viewport").setAttribute("transform", `translate(${x} ${y}) scale(${scale})`);
       $("#mapWrap").classList.toggle("labels-on", scale >= 4.5);
       $$(".country-label").forEach((node) => {
-        node.setAttribute("font-size", Math.max(2.4, 9.5 / scale));
+        node.setAttribute("font-size", Math.max(1.2, 4.75 / scale));
       });
     }
 
