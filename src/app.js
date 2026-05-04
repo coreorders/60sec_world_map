@@ -1,7 +1,12 @@
 const COUNTRY_DATA = window.COUNTRY_DATA || [];
 const COUNTRY_BY_ID = window.COUNTRY_BY_ID || new Map();
 const CITY_DATA = window.CITY_DATA || [];
-const COUNTRY_ISO2 = window.COUNTRY_ISO2 || {};
+const EXCLUDED_COUNTRY_IDS = new Set(["010"]);
+const PLAYABLE_COUNTRIES = COUNTRY_DATA.filter((country) => !EXCLUDED_COUNTRY_IDS.has(country.id));
+const COUNTRY_PALETTE = [
+  "#f7c6c7", "#f8d49a", "#f7ef9f", "#bfe7c2", "#b9eadf", "#b9dcf2",
+  "#c8d3ff", "#dcc5f2", "#f3c4df", "#d9e7aa", "#ffd2b3", "#c9e2d0"
+];
 
 const I18N = {
       en: {
@@ -502,7 +507,6 @@ const I18N = {
 
     async function renderMap() {
       const graticule = $("#graticule");
-      renderFlagPatterns();
       WORLD_COPIES.forEach((offset) => {
         const graticulePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
         graticulePath.setAttribute("class", "graticule");
@@ -517,18 +521,20 @@ const I18N = {
       if (!response.ok) throw new Error("Map data failed to load");
       const topology = await response.json();
       const world = topojson.feature(topology, topology.objects.countries);
+      const countryColors = buildCountryColorMap(topology.objects.countries.geometries);
       world.features.forEach((feature) => {
         const featureName = feature.properties && feature.properties.name ? feature.properties.name : "Unknown";
         const id = feature.id == null ? `custom:${featureName}` : String(feature.id).padStart(3, "0");
+        if (EXCLUDED_COUNTRY_IDS.has(id)) return;
         state.countryCentroids.set(id, geoPath.centroid(feature));
         state.countrySegments.set(id, buildCountrySegments(feature));
         WORLD_COPIES.forEach((offset) => {
           const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          path.setAttribute("class", COUNTRY_ISO2[id] ? "country has-flag" : "country");
+          path.setAttribute("class", "country");
           path.dataset.countryId = id;
           path.setAttribute("d", geoPath(feature));
           path.setAttribute("transform", `translate(${offset} 0)`);
-          if (COUNTRY_ISO2[id]) path.setAttribute("fill", `url(#flag-${id})`);
+          path.style.setProperty("--country-fill", countryColors.get(id) || COUNTRY_PALETTE[0]);
           countriesLayer.appendChild(path);
         });
         const country = COUNTRY_BY_ID.get(id);
@@ -558,26 +564,56 @@ const I18N = {
       applyTransform();
     }
 
-    function renderFlagPatterns() {
-      const root = $("#flagPatterns");
-      Object.entries(COUNTRY_ISO2).forEach(([id, iso2]) => {
-        const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
-        pattern.setAttribute("id", `flag-${id}`);
-        pattern.setAttribute("patternUnits", "objectBoundingBox");
-        pattern.setAttribute("patternContentUnits", "objectBoundingBox");
-        pattern.setAttribute("width", "1");
-        pattern.setAttribute("height", "1");
-
-        const image = document.createElementNS("http://www.w3.org/2000/svg", "image");
-        image.setAttribute("href", `https://flagcdn.com/w320/${iso2}.png`);
-        image.setAttribute("x", "0");
-        image.setAttribute("y", "0");
-        image.setAttribute("width", "1");
-        image.setAttribute("height", "1");
-        image.setAttribute("preserveAspectRatio", "xMidYMid slice");
-        pattern.appendChild(image);
-        root.appendChild(pattern);
+    function buildCountryColorMap(geometries) {
+      const idToArcs = new Map();
+      const arcOwners = new Map();
+      geometries.forEach((geometry) => {
+        const id = geometry.id == null ? `custom:${geometry.properties?.name || "Unknown"}` : String(geometry.id).padStart(3, "0");
+        if (EXCLUDED_COUNTRY_IDS.has(id)) return;
+        const arcs = collectArcIndexes(geometry.arcs);
+        idToArcs.set(id, arcs);
+        arcs.forEach((arc) => {
+          if (!arcOwners.has(arc)) arcOwners.set(arc, []);
+          arcOwners.get(arc).push(id);
+        });
       });
+
+      const neighbors = new Map([...idToArcs.keys()].map((id) => [id, new Set()]));
+      arcOwners.forEach((owners) => {
+        owners.forEach((id) => {
+          owners.forEach((otherId) => {
+            if (id !== otherId) neighbors.get(id)?.add(otherId);
+          });
+        });
+      });
+
+      const colors = new Map();
+      [...neighbors.entries()]
+        .sort((a, b) => b[1].size - a[1].size || a[0].localeCompare(b[0]))
+        .forEach(([id, neighborIds]) => {
+          const blocked = new Set([...neighborIds].map((neighborId) => colors.get(neighborId)).filter(Boolean));
+          const color = COUNTRY_PALETTE.find((candidate) => !blocked.has(candidate)) || COUNTRY_PALETTE[hashString(id) % COUNTRY_PALETTE.length];
+          colors.set(id, color);
+        });
+      return colors;
+    }
+
+    function collectArcIndexes(arcs, out = new Set()) {
+      if (!Array.isArray(arcs)) return out;
+      arcs.forEach((value) => {
+        if (Array.isArray(value)) {
+          collectArcIndexes(value, out);
+        } else if (Number.isInteger(value)) {
+          out.add(value >= 0 ? value : ~value);
+        }
+      });
+      return out;
+    }
+
+    function hashString(value) {
+      let hash = 0;
+      for (let i = 0; i < value.length; i += 1) hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+      return hash;
     }
 
     function applyTransform() {
@@ -847,7 +883,7 @@ const I18N = {
       state.resultEntry = null;
       state.resultRankRows = null;
       state.savePromise = null;
-      state.pool = shuffle(mode === "COUNTRY" ? COUNTRY_DATA : CITY_DATA);
+      state.pool = shuffle(mode === "COUNTRY" ? PLAYABLE_COUNTRIES : CITY_DATA);
       clearInterval(state.timerId);
       clearReview();
       resetMapView();
@@ -880,7 +916,7 @@ const I18N = {
       $("#mapWrap").classList.remove("urgent");
       state.revealingAnswer = false;
       clearCountryFeedback();
-      if (state.pool.length === 0) state.pool = shuffle(state.mode === "COUNTRY" ? COUNTRY_DATA : CITY_DATA);
+      if (state.pool.length === 0) state.pool = shuffle(state.mode === "COUNTRY" ? PLAYABLE_COUNTRIES : CITY_DATA);
       state.current = state.pool.pop();
       state.questionLeft = 10;
       $("#targetName").textContent = localName(state.current);
