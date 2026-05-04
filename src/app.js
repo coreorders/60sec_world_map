@@ -171,6 +171,15 @@ const I18N = {
       return I18N[state.locale][key] || I18N.en[key] || key;
     }
 
+    function trackEvent(name, params = {}) {
+      if (typeof window.gtag !== "function") return;
+      window.gtag("event", name, {
+        game_mode: state.mode,
+        locale: state.locale,
+        ...params
+      });
+    }
+
     function localName(item) {
       return state.locale === "ko" ? (item.name_ko || item.city_ko) : (item.name_en || item.city_en);
     }
@@ -793,6 +802,7 @@ const I18N = {
       $("#langToggle").disabled = true;
       $("#mapWrap").classList.remove("urgent");
       startBgm();
+      trackEvent("game_start");
       nextQuestion();
       updateHud();
       state.timerId = setInterval(tick, 1000);
@@ -912,6 +922,11 @@ const I18N = {
       $("#reviewText").textContent = state.misses.length ? t("reviewSome") : t("reviewNone");
       $("#nicknameInput").value = "";
       renderReview();
+      trackEvent("game_finish", {
+        score: state.score,
+        accuracy: accuracyPercent(),
+        attempts: state.attempts
+      });
       autoSaveScore();
     }
 
@@ -1029,6 +1044,11 @@ const I18N = {
           await refreshRemoteLeaderboard();
           renderLeaderboard();
           renderResultReel();
+          trackEvent("score_auto_saved", {
+            score: savedEntry.score,
+            accuracy: savedEntry.accuracy,
+            attempts: savedEntry.attempts
+          });
           return state.resultEntry;
         } catch (error) {
           console.warn("Remote score save failed. Falling back to local scores.", error);
@@ -1041,6 +1061,11 @@ const I18N = {
       localStorage.setItem("wpr_scores", JSON.stringify(trimmedRecords));
       renderLeaderboard();
       renderResultReel();
+      trackEvent("score_auto_saved_local", {
+        score: entry.score,
+        accuracy: entry.accuracy,
+        attempts: entry.attempts
+      });
       return state.resultEntry;
     }
 
@@ -1061,6 +1086,7 @@ const I18N = {
           await refreshRemoteLeaderboard();
           renderLeaderboard();
           renderResultReel();
+          trackEvent("score_nickname_updated");
           return;
         } catch (error) {
           console.warn("Remote score save failed. Falling back to local scores.", error);
@@ -1071,6 +1097,7 @@ const I18N = {
       state.resultEntry = { ...state.resultEntry, nickname };
       renderLeaderboard();
       renderResultReel();
+      trackEvent("score_nickname_updated_local");
     }
 
     async function apiJson(path, options) {
@@ -1248,6 +1275,10 @@ const I18N = {
     }
 
     function shareResult() {
+      trackEvent("share_result", {
+        score: state.score,
+        accuracy: accuracyPercent()
+      });
       const url = "https://maps.zzim.site";
       const text = state.locale === "ko"
         ? `점수: ${state.score}점\n정답률: ${accuracyPercent()}%\n\n${url}`
@@ -1307,6 +1338,9 @@ const I18N = {
       $("#rankMoreBtn").addEventListener("click", async () => {
         state.leaderboardLimit = HOME_RANK_EXPANDED_LIMIT;
         $("#rankMoreBtn").disabled = true;
+        trackEvent("leaderboard_expand", {
+          limit: HOME_RANK_EXPANDED_LIMIT
+        });
         await refreshRemoteLeaderboard(HOME_RANK_EXPANDED_LIMIT);
         renderLeaderboard();
       });
@@ -1326,6 +1360,10 @@ const I18N = {
         event.stopPropagation();
         if (!state.playing) return;
         playClickSound();
+        trackEvent("finish_now", {
+          score: state.score,
+          attempts: state.attempts
+        });
         finishGame();
       });
 
