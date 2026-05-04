@@ -105,8 +105,7 @@ const I18N = {
     const MAX_MAP_SCALE = 14;
     const MAP_WIDTH = 1000;
     const MAP_HEIGHT = 500;
-    const MAP_Y_MIN = 8;
-    const MAP_Y_MAX = 492;
+    const MAP_LAT_LIMIT = 85;
     const WORLD_WIDTH = 1000;
     const WORLD_COPIES = [-WORLD_WIDTH, 0, WORLD_WIDTH];
     const PRODUCTION_HOSTS = new Set(["maps.zzim.site", "coreorders.github.io"]);
@@ -115,9 +114,10 @@ const I18N = {
     const $$ = (selector) => Array.from(document.querySelectorAll(selector));
     const projection = d3.geoMercator()
       .scale(WORLD_WIDTH / (2 * Math.PI))
-      .translate([WORLD_WIDTH / 2, MAP_HEIGHT / 2])
-      .clipExtent([[0, MAP_Y_MIN], [WORLD_WIDTH, MAP_Y_MAX]]);
+      .translate([WORLD_WIDTH / 2, MAP_HEIGHT / 2]);
     const geoPath = d3.geoPath(projection);
+    const MAP_Y_MIN = projection([0, MAP_LAT_LIMIT])[1];
+    const MAP_Y_MAX = projection([0, -MAP_LAT_LIMIT])[1];
 
     const state = {
       locale: pickInitialLocale(),
