@@ -3,5 +3,8 @@ node_modules/
 .dev.vars
 *.log
 tmp/
+dist/
+*.ait
+.granite/
 worker/node_modules/
 worker/.wrangler/

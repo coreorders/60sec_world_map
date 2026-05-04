@@ -1,0 +1,17 @@
+{
+  "name": "sixty-sec-world-map",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --host 127.0.0.1 --port 5173",
+    "build:web": "vite build",
+    "build": "ait build"
+  },
+  "dependencies": {
+    "@apps-in-toss/web-framework": "^2.0.1",
+    "vite": "^7.1.12",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {}
+}

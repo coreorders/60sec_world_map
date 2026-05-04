@@ -2,6 +2,8 @@ const ALLOWED_ORIGINS = new Set([
   "https://maps.zzim.site",
   "http://maps.zzim.site",
   "https://coreorders.github.io",
+  "https://sixty-sec-world-map.apps.tossmini.com",
+  "https://sixty-sec-world-map.private-apps.tossmini.com",
   "https://map.zzim.site",
   "http://map.zzim.site",
   "http://127.0.0.1:4173",
