@@ -103,13 +103,20 @@ const I18N = {
     const HOME_RANK_EXPANDED_LIMIT = 200;
     const MOBILE_DRAG_Y_GAIN = 1.55;
     const MAX_MAP_SCALE = 14;
+    const MAP_WIDTH = 1000;
+    const MAP_HEIGHT = 500;
+    const MAP_Y_MIN = 8;
+    const MAP_Y_MAX = 492;
     const WORLD_WIDTH = 1000;
     const WORLD_COPIES = [-WORLD_WIDTH, 0, WORLD_WIDTH];
     const PRODUCTION_HOSTS = new Set(["maps.zzim.site", "coreorders.github.io"]);
     const API_BASE = window.MAP_RANK_API || (PRODUCTION_HOSTS.has(location.hostname) ? "https://map-rank-api.ykdj.workers.dev" : "");
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => Array.from(document.querySelectorAll(selector));
-    const projection = d3.geoNaturalEarth1().fitExtent([[20, 20], [980, 480]], { type: "Sphere" });
+    const projection = d3.geoMercator()
+      .scale(WORLD_WIDTH / (2 * Math.PI))
+      .translate([WORLD_WIDTH / 2, MAP_HEIGHT / 2])
+      .clipExtent([[0, MAP_Y_MIN], [WORLD_WIDTH, MAP_Y_MAX]]);
     const geoPath = d3.geoPath(projection);
 
     const state = {
@@ -559,7 +566,7 @@ const I18N = {
       return {
         scale,
         x: wrapTranslateX(transform.x, scale),
-        y: Math.max(-500 * scale + pad, Math.min(500 - pad, transform.y))
+        y: Math.max(MAP_HEIGHT - MAP_Y_MAX * scale - pad, Math.min(pad - MAP_Y_MIN * scale, transform.y))
       };
     }
 
@@ -640,8 +647,8 @@ const I18N = {
       const wrappedPoint = nearestWrappedPoint(point, scale);
       return animateTransformTo({
         scale,
-        x: 500 - wrappedPoint.x * scale,
-        y: 250 - wrappedPoint.y * scale
+        x: MAP_WIDTH / 2 - wrappedPoint.x * scale,
+        y: MAP_HEIGHT / 2 - wrappedPoint.y * scale
       }, duration);
     }
 
@@ -650,7 +657,7 @@ const I18N = {
       let best = candidates[0];
       let bestDistance = Infinity;
       candidates.forEach((candidate) => {
-        const targetX = 500 - candidate.x * scale;
+        const targetX = MAP_WIDTH / 2 - candidate.x * scale;
         const distance = Math.abs(targetX - state.transform.x);
         if (distance < bestDistance) {
           best = candidate;
