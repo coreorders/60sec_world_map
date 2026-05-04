@@ -5,6 +5,7 @@ import path from "node:path";
 const staticFiles = [
   "bgm.mp3",
   "icon.png",
+  "favicon.png",
   "assets/bgm.mp3",
   "vendor/d3.min.js",
   "vendor/topojson-client.min.js",
