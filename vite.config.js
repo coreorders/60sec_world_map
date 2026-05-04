@@ -6,6 +6,7 @@ const staticFiles = [
   "bgm.mp3",
   "icon.png",
   "favicon.png",
+  "og-image.png",
   "assets/bgm.mp3",
   "vendor/d3.min.js",
   "vendor/topojson-client.min.js",
