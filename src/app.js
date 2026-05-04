@@ -106,14 +106,18 @@ const I18N = {
     const MAP_WIDTH = 1000;
     const MAP_HEIGHT = 500;
     const MAP_LAT_LIMIT = 85;
-    const WORLD_WIDTH = 1000;
-    const WORLD_COPIES = [-WORLD_WIDTH, 0, WORLD_WIDTH];
+    const MAP_VERTICAL_PADDING = 18;
+    const MERCATOR_LAT_RAD = MAP_LAT_LIMIT * Math.PI / 180;
+    const MERCATOR_Y_SPAN = Math.log(Math.tan(Math.PI / 4 + MERCATOR_LAT_RAD / 2));
+    const MERCATOR_SCALE = (MAP_HEIGHT - MAP_VERTICAL_PADDING * 2) / (MERCATOR_Y_SPAN * 2);
+    const WORLD_WIDTH = 2 * Math.PI * MERCATOR_SCALE;
+    const WORLD_COPIES = [-2, -1, 0, 1, 2].map((copy) => copy * WORLD_WIDTH);
     const PRODUCTION_HOSTS = new Set(["maps.zzim.site", "coreorders.github.io"]);
     const API_BASE = window.MAP_RANK_API || (PRODUCTION_HOSTS.has(location.hostname) ? "https://map-rank-api.ykdj.workers.dev" : "");
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => Array.from(document.querySelectorAll(selector));
     const projection = d3.geoMercator()
-      .scale(WORLD_WIDTH / (2 * Math.PI))
+      .scale(MERCATOR_SCALE)
       .translate([WORLD_WIDTH / 2, MAP_HEIGHT / 2]);
     const geoPath = d3.geoPath(projection);
     const MAP_Y_MIN = projection([0, MAP_LAT_LIMIT])[1];
