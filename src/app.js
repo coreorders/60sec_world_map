@@ -180,6 +180,26 @@ const I18N = {
       });
     }
 
+    function deviceType() {
+      const ua = navigator.userAgent || "";
+      const maxTouchPoints = navigator.maxTouchPoints || 0;
+      if (/ipad|tablet/i.test(ua) || (maxTouchPoints > 1 && /macintosh/i.test(ua))) return "tablet";
+      if (/mobile|iphone|ipod|android.*mobile/i.test(ua)) return "mobile";
+      if (/android/i.test(ua)) return "tablet";
+      return "desktop";
+    }
+
+    function browserName() {
+      const ua = navigator.userAgent || "";
+      if (/SamsungBrowser/i.test(ua)) return "Samsung Internet";
+      if (/Whale/i.test(ua)) return "Whale";
+      if (/Edg/i.test(ua)) return "Edge";
+      if (/Firefox|FxiOS/i.test(ua)) return "Firefox";
+      if (/Chrome|CriOS/i.test(ua) && !/Edg|Whale|SamsungBrowser/i.test(ua)) return "Chrome";
+      if (/Safari/i.test(ua) && !/Chrome|CriOS|Edg|Whale|SamsungBrowser/i.test(ua)) return "Safari";
+      return "Other";
+    }
+
     function localName(item) {
       return state.locale === "ko" ? (item.name_ko || item.city_ko) : (item.name_en || item.city_en);
     }
@@ -1116,6 +1136,8 @@ const I18N = {
           accuracy: entry.accuracy,
           attempts: entry.attempts,
           locale: entry.locale,
+          device_type: deviceType(),
+          browser: browserName(),
           game_mode: "COUNTRY"
         })
       });

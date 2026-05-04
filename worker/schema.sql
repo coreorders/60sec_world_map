@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS scores (
   accuracy INTEGER NOT NULL,
   attempts INTEGER NOT NULL,
   locale TEXT NOT NULL DEFAULT 'ko',
+  device_type TEXT NOT NULL DEFAULT 'unknown',
+  browser TEXT NOT NULL DEFAULT 'unknown',
+  country_code TEXT NOT NULL DEFAULT 'XX',
   created_at INTEGER NOT NULL
 );
 

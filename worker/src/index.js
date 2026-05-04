@@ -22,11 +22,11 @@ export default {
     try {
       if (url.pathname === "/scores" && request.method === "POST") {
         const body = await request.json();
-        const entry = normalizeScore(body);
+        const entry = normalizeScore(body, request);
 
         await env.DB.prepare(`
-          INSERT INTO scores (id, game_mode, nickname, score, accuracy, attempts, locale, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO scores (id, game_mode, nickname, score, accuracy, attempts, locale, device_type, browser, country_code, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           entry.id,
           entry.game_mode,
@@ -35,6 +35,9 @@ export default {
           entry.accuracy,
           entry.attempts,
           entry.locale,
+          entry.device_type,
+          entry.browser,
+          entry.country_code,
           entry.created_at
         ).run();
 
@@ -136,7 +139,7 @@ export default {
   }
 };
 
-function normalizeScore(body) {
+function normalizeScore(body, request) {
   const now = Date.now();
   const id = crypto.randomUUID();
   return {
@@ -147,12 +150,25 @@ function normalizeScore(body) {
     accuracy: clampNumber(body.accuracy, 0, 100),
     attempts: clampNumber(body.attempts, 0, 1000),
     locale: body.locale === "en" ? "en" : "ko",
+    device_type: normalizeKnownValue(body.device_type, ["mobile", "tablet", "desktop"], "unknown"),
+    browser: normalizeKnownValue(body.browser, ["Chrome", "Safari", "Edge", "Firefox", "Samsung Internet", "Whale", "Other"], "unknown"),
+    country_code: normalizeCountryCode(request.cf && request.cf.country),
     created_at: now
   };
 }
 
 function normalizeNickname(value) {
   return String(value || "Anonymous").trim().slice(0, 10) || "Anonymous";
+}
+
+function normalizeKnownValue(value, allowed, fallback) {
+  const text = String(value || "").trim();
+  return allowed.includes(text) ? text : fallback;
+}
+
+function normalizeCountryCode(value) {
+  const text = String(value || "XX").trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(text) ? text : "XX";
 }
 
 function periodRange(period) {
