@@ -165,6 +165,7 @@ const I18N = {
         master: null,
         bgmTimer: 0,
         bgmAudio: null,
+        bgmDuckTimer: 0,
         bgmSourceUnavailable: false
       }
     };
@@ -354,16 +355,27 @@ const I18N = {
       return context;
     }
 
+    function duckBgm(duration = 190) {
+      if (!state.audio.bgmAudio || state.audio.bgmAudio.paused) return;
+      state.audio.bgmAudio.volume = 0.28;
+      clearTimeout(state.audio.bgmDuckTimer);
+      state.audio.bgmDuckTimer = setTimeout(() => {
+        if (state.audio.bgmAudio && !state.audio.bgmAudio.paused) state.audio.bgmAudio.volume = 0.52;
+      }, duration);
+    }
+
     function playTone(freq, startDelay, duration, type, volume) {
       const context = initAudio();
       if (!context || !state.audio.master) return;
+      duckBgm();
       const oscillator = context.createOscillator();
       const gain = context.createGain();
       const now = context.currentTime + startDelay;
+      const sfxVolume = Math.min(0.22, (volume || 0.08) * 1.8);
       oscillator.type = type || "sine";
       oscillator.frequency.setValueAtTime(freq, now);
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(volume || 0.08, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(sfxVolume, now + 0.015);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       oscillator.connect(gain);
       gain.connect(state.audio.master);
@@ -374,6 +386,7 @@ const I18N = {
     function playNoiseBurst(startDelay, duration, volume, filterFreq = 2200) {
       const context = initAudio();
       if (!context || !state.audio.master) return;
+      duckBgm();
       const sampleCount = Math.max(1, Math.floor(context.sampleRate * duration));
       const buffer = context.createBuffer(1, sampleCount, context.sampleRate);
       const data = buffer.getChannelData(0);
@@ -389,7 +402,7 @@ const I18N = {
       filter.frequency.setValueAtTime(filterFreq, now);
       filter.Q.setValueAtTime(6, now);
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(volume, now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(Math.min(0.12, volume * 1.9), now + 0.008);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       source.buffer = buffer;
       source.connect(filter);
@@ -514,9 +527,9 @@ const I18N = {
         const bass = basses[phraseIndex % 16];
         const melody = phrases[phraseIndex % 16];
         melody.forEach((freq, index) => {
-          playBgmTone(freq, index * 0.16, 0.115, index % 2 ? 0.027 : 0.036);
+          playBgmTone(freq, index * 0.16, 0.115, index % 2 ? 0.019 : 0.026);
         });
-        [0, 0.64, 1.28].forEach((delay) => playBgmTone(bass, delay, 0.18, 0.018));
+        [0, 0.64, 1.28].forEach((delay) => playBgmTone(bass, delay, 0.18, 0.012));
         phraseIndex += 1;
       };
       phrase();
@@ -540,7 +553,7 @@ const I18N = {
         const audio = new Audio(new URL("bgm.mp3", document.baseURI).href);
         audio.loop = true;
         audio.preload = "auto";
-        audio.volume = 0.72;
+        audio.volume = 0.52;
         audio.addEventListener("error", () => {
           state.audio.bgmSourceUnavailable = true;
           state.audio.bgmAudio = null;
