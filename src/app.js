@@ -371,6 +371,34 @@ const I18N = {
       oscillator.stop(now + duration + 0.04);
     }
 
+    function playNoiseBurst(startDelay, duration, volume, filterFreq = 2200) {
+      const context = initAudio();
+      if (!context || !state.audio.master) return;
+      const sampleCount = Math.max(1, Math.floor(context.sampleRate * duration));
+      const buffer = context.createBuffer(1, sampleCount, context.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < sampleCount; i += 1) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / sampleCount);
+      }
+
+      const source = context.createBufferSource();
+      const filter = context.createBiquadFilter();
+      const gain = context.createGain();
+      const now = context.currentTime + startDelay;
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(filterFreq, now);
+      filter.Q.setValueAtTime(6, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(volume, now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      source.buffer = buffer;
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(state.audio.master);
+      source.start(now);
+      source.stop(now + duration + 0.03);
+    }
+
     function playBgmTone(freq, startDelay, duration, volume = 0.02) {
       const context = initAudio();
       if (!context || !state.audio.master) return;
@@ -403,7 +431,19 @@ const I18N = {
     }
 
     function playClickSound() {
-      playTone(760, 0, 0.055, "triangle", 0.045);
+      playTone(760, 0, 0.045, "triangle", 0.06);
+      playNoiseBurst(0, 0.028, 0.018, 2800);
+    }
+
+    function playUiClickSound() {
+      playTone(620, 0, 0.045, "triangle", 0.045);
+      playTone(930, 0.035, 0.055, "sine", 0.035);
+    }
+
+    function playStartSound() {
+      [523, 784, 1047].forEach((freq, index) => {
+        playTone(freq, index * 0.055, 0.115, "triangle", 0.075);
+      });
     }
 
     function playCorrectSound(combo = 1) {
@@ -416,9 +456,22 @@ const I18N = {
       if (combo >= 4) playTone(1760 * lift, 0.25, 0.09, "sine", 0.05);
     }
 
+    function playPartialSound(points = 1) {
+      const lift = 2 ** (Math.max(0, points - 1) / 12);
+      playTone(494 * lift, 0, 0.07, "triangle", 0.052);
+      playTone(659 * lift, 0.065, 0.085, "sine", 0.046);
+      playTone(784 * lift, 0.14, 0.075, "triangle", 0.038);
+    }
+
     function playWrongSound() {
       playTone(330, 0, 0.12, "sawtooth", 0.052);
       playTone(220, 0.1, 0.16, "triangle", 0.055);
+    }
+
+    function playTimeoutSound() {
+      playTone(440, 0, 0.08, "square", 0.045);
+      playTone(330, 0.085, 0.09, "square", 0.04);
+      playTone(247, 0.17, 0.13, "triangle", 0.045);
     }
 
     function playFinishSound() {
@@ -968,7 +1021,13 @@ const I18N = {
         : result.points > 0
           ? t("partial").replace("{points}", result.points).replace("{distance}", Math.round(result.distanceKm))
           : t("wrong");
-      playWrongSound();
+      if (result.missReason === "timeout") {
+        playTimeoutSound();
+      } else if (result.points > 0) {
+        playPartialSound(result.points);
+      } else {
+        playWrongSound();
+      }
       showToast(message, result.points > 0 ? "good" : "bad");
       updateHud();
       const point = getCountryPoint(state.current);
@@ -1395,6 +1454,16 @@ const I18N = {
     }
 
     function bindUi() {
+      document.addEventListener("click", (event) => {
+        const button = event.target && event.target.closest ? event.target.closest("button") : null;
+        if (!button || button.disabled) return;
+        if (button.classList.contains("mode")) {
+          playStartSound();
+          return;
+        }
+        playUiClickSound();
+      }, true);
+
       $("#langToggle").addEventListener("click", () => {
         if (state.playing) return;
         state.locale = state.locale === "ko" ? "en" : "ko";
@@ -1453,7 +1522,6 @@ const I18N = {
         event.preventDefault();
         event.stopPropagation();
         if (!state.playing) return;
-        playClickSound();
         trackEvent("finish_now", {
           score: state.score,
           attempts: state.attempts
