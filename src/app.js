@@ -149,6 +149,7 @@ const I18N = {
       transform: { x: 0, y: 0, scale: 1 },
       countryCentroids: new Map(),
       countrySegments: new Map(),
+      countryHitTolerances: new Map(),
       pointers: new Map(),
       dragStart: null,
       lastGestureMoved: false,
@@ -319,6 +320,16 @@ const I18N = {
       if (distanceKm <= 500) return 3;
       if (distanceKm <= 1000) return 2;
       if (distanceKm <= 2000) return 1;
+      return 0;
+    }
+
+    function hitToleranceForFeature(feature) {
+      const area = geoPath.area(feature);
+      if (area < 1) return 320;
+      if (area < 3) return 260;
+      if (area < 7) return 200;
+      if (area < 15) return 140;
+      if (area < 30) return 90;
       return 0;
     }
 
@@ -594,6 +605,7 @@ const I18N = {
         if (EXCLUDED_COUNTRY_IDS.has(id)) return;
         state.countryCentroids.set(id, geoPath.centroid(feature));
         state.countrySegments.set(id, buildCountrySegments(feature));
+        state.countryHitTolerances.set(id, hitToleranceForFeature(feature));
         WORLD_COPIES.forEach((offset) => {
           const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
           path.setAttribute("class", "country");
@@ -991,9 +1003,15 @@ const I18N = {
 
     function handleCountryGuess(countryId, mapPoint) {
       if (!state.current) return;
-      const ok = countryId === state.current.id;
-      flashCountry(countryId, ok ? "hit" : "miss");
-      const distanceKm = ok ? 0 : distanceToCountryKm(mapPoint, state.current.id);
+      const exact = countryId === state.current.id;
+      const distanceKm = exact ? 0 : distanceToCountryKm(mapPoint, state.current.id);
+      const toleranceKm = state.countryHitTolerances.get(state.current.id) || 0;
+      const ok = exact || distanceKm <= toleranceKm;
+      if (ok) {
+        flashCountry(state.current.id, "hit");
+      } else {
+        flashCountry(countryId, "miss");
+      }
       const points = pointsForDistance(distanceKm, ok);
       resolveGuess({ ok, points, distanceKm, missReason: ok ? null : "wrong" });
     }
