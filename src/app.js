@@ -108,7 +108,7 @@ const I18N = {
     const HOME_RANK_LIMIT = 50;
     const HOME_RANK_EXPANDED_LIMIT = 200;
     const MOBILE_DRAG_Y_GAIN = 1.55;
-    const MAX_MAP_SCALE = 14;
+    const MAX_MAP_SCALE = 20;
     const MAP_WIDTH = 1000;
     const MAP_HEIGHT = 500;
     const MAP_LAT_LIMIT = 85;
@@ -697,9 +697,9 @@ const I18N = {
     function applyTransform() {
       const { x, y, scale } = state.transform;
       $("#viewport").setAttribute("transform", `translate(${x} ${y}) scale(${scale})`);
-      $("#mapWrap").classList.toggle("labels-on", scale >= 4.5);
+      $("#mapWrap").classList.toggle("labels-on", scale >= 4.2);
       $$(".country-label").forEach((node) => {
-        node.setAttribute("font-size", Math.max(1.2, 4.75 / scale));
+        node.setAttribute("font-size", Math.min(2.6, Math.max(0.35, 8.5 / scale)));
       });
     }
 
