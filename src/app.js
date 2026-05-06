@@ -699,7 +699,7 @@ const I18N = {
       $("#viewport").setAttribute("transform", `translate(${x} ${y}) scale(${scale})`);
       $("#mapWrap").classList.toggle("labels-on", scale >= 3.4);
       $$(".country-label").forEach((node) => {
-        node.setAttribute("font-size", Math.min(8.4, Math.max(0.96, 28.8 / scale)));
+        node.setAttribute("font-size", Math.min(6.72, Math.max(0.768, 23.04 / scale)));
       });
     }
 
